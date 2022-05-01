@@ -1,5 +1,5 @@
 {
-  "app": "npx ts-node --prefer-ts-exts bin/aws_standard_vpc_template.ts",
+  "app": "npx ts-node --prefer-ts-exts bin/AwsStandardVpc.ts",
   "watch": {
     "include": [
       "**"
