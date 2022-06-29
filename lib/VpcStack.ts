@@ -2,7 +2,6 @@ import { Stack, StackProps } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as CDK from "aws-cdk-lib";
 import * as EC2 from "aws-cdk-lib/aws-ec2";
-import { STAGE_ENV } from "../lib/config";
 
 export interface VpcStackStackProps extends CDK.StackProps {
   readonly env: CDK.Environment;

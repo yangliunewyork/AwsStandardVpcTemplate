@@ -2,17 +2,16 @@
 import "source-map-support/register";
 import * as CDK from "aws-cdk-lib";
 import { VpcStack } from "../lib/VpcStack";
-import { STAGE_ENV } from "../lib/config";
 
 const PackageName = "CoreVpc";
 
-const ProdEnv: CDK.Environment = {
-  account: STAGE_ENV.PROD.awsAccountId,
-  region: STAGE_ENV.PROD.awsRegion,
+const Env: CDK.Environment = {
+  account: process.env.CDK_DEFAULT_ACCOUNT,
+  region: process.env.CDK_DEFAULT_REGION,
 };
 const app = new CDK.App();
 new VpcStack(app, `${PackageName}`, {
-  env: ProdEnv,
+  env: Env,
   description: `The core VPC.`,
 });
 
