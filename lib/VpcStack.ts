@@ -2,6 +2,7 @@ import { Stack, StackProps } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as CDK from "aws-cdk-lib";
 import * as EC2 from "aws-cdk-lib/aws-ec2";
+import { Ec2Action } from "aws-cdk-lib/aws-cloudwatch-actions";
 
 export interface VpcStackStackProps extends CDK.StackProps {
   readonly env: CDK.Environment;
@@ -13,6 +14,7 @@ export class VpcStack extends Stack {
   constructor(scope: CDK.App, id: string, props?: VpcStackStackProps) {
     super(scope, id, props);
 
+    // Create VPC
     this.coreVpc = new EC2.Vpc(this, "CoreVpc", {
       vpcName: "CoreVpc",
       cidr: "10.0.0.0/16",
@@ -33,5 +35,38 @@ export class VpcStack extends Stack {
         },
       ],
     });
+
+    // Create security group for the VPC
+    const vpcEndpointSecurityGroup = new EC2.SecurityGroup(
+      this,
+      "VPCEndpointSecurityGroup",
+      {
+        vpc: this.coreVpc,
+        description: "Security group for granting AWS services access to the CoreVpc",
+        allowAllOutbound: false,
+      }
+    );
+    vpcEndpointSecurityGroup.addIngressRule(
+      EC2.Peer.ipv4(this.coreVpc.vpcCidrBlock),
+      EC2.Port.tcp(443),
+      "Allow HTTPS ingress traffic"
+    );
+
+    const privateSubnets = this.coreVpc.selectSubnets(
+      {
+        subnetType: EC2.SubnetType.PRIVATE_ISOLATED
+      }
+    );
+
+    // Grant AWS CodeBuild service access to the VPC's private subnets.
+    new EC2.InterfaceVpcEndpoint(
+      this, 'CodeBuildInterfaceVpcEndpoint', {
+        service: EC2.InterfaceVpcEndpointAwsService.CODEBUILD,
+        vpc: this.coreVpc,
+        privateDnsEnabled: false,
+        securityGroups: [vpcEndpointSecurityGroup],
+        subnets: privateSubnets
+      }
+    );
   }
 }
