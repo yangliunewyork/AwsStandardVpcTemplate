@@ -14,9 +14,11 @@ export class VpcStack extends Stack {
   constructor(scope: CDK.App, id: string, props?: VpcStackStackProps) {
     super(scope, id, props);
 
+    const vpcName: string = "CoreVpc";
+
     // Create VPC
     this.coreVpc = new EC2.Vpc(this, "CoreVpc", {
-      vpcName: "CoreVpc",
+      vpcName: vpcName,
       cidr: "10.0.0.0/16",
       enableDnsHostnames: true,
       enableDnsSupport: true,
@@ -39,8 +41,9 @@ export class VpcStack extends Stack {
     // Create security group for the VPC
     const vpcEndpointSecurityGroup = new EC2.SecurityGroup(
       this,
-      "VPCEndpointSecurityGroup",
+      `${vpcName}-VPCEndpointSecurityGroup`,
       {
+        securityGroupName: `${vpcName}-VPCEndpointSecurityGroup`,
         vpc: this.coreVpc,
         description: "Security group for granting AWS services access to the CoreVpc",
         allowAllOutbound: false,
