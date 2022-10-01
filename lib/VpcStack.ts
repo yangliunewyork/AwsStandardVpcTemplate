@@ -55,6 +55,12 @@ export class VpcStack extends Stack {
       "Allow HTTPS ingress traffic"
     );
 
+    vpcEndpointSecurityGroup.addEgressRule(
+      EC2.Peer.ipv4(this.coreVpc.vpcCidrBlock),
+      EC2.Port.tcp(443),
+      "Allow HTTPS egress traffic"
+    );
+
     const privateSubnets = this.coreVpc.selectSubnets(
       {
         subnetType: EC2.SubnetType.PRIVATE_ISOLATED
@@ -66,9 +72,17 @@ export class VpcStack extends Stack {
       this, 'CodeBuildInterfaceVpcEndpoint', {
         service: EC2.InterfaceVpcEndpointAwsService.CODEBUILD,
         vpc: this.coreVpc,
-        privateDnsEnabled: false,
+        privateDnsEnabled: true,
         securityGroups: [vpcEndpointSecurityGroup],
         subnets: privateSubnets
+      }
+    );
+
+    // Grant VPC access to S3 service.
+    new EC2.GatewayVpcEndpoint(
+      this, 'S3InterfaceVpcEndpoint', {
+        service: EC2.GatewayVpcEndpointAwsService.S3,
+        vpc: this.coreVpc,
       }
     );
   }
