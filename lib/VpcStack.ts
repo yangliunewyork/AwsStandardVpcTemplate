@@ -49,26 +49,29 @@ export class VpcStack extends Stack {
         allowAllOutbound: false,
       }
     );
+    
     vpcEndpointSecurityGroup.addIngressRule(
       EC2.Peer.ipv4(this.coreVpc.vpcCidrBlock),
       EC2.Port.tcp(443),
-      "Allow HTTPS ingress traffic"
+      //EC2.Port.allTraffic(),
+      "Allow TCP ingress traffic"
     );
 
     vpcEndpointSecurityGroup.addEgressRule(
-      EC2.Peer.ipv4(this.coreVpc.vpcCidrBlock),
-      EC2.Port.tcp(443),
-      "Allow HTTPS egress traffic"
+      EC2.Peer.anyIpv4(),
+      EC2.Port.allTcp(),
+      "Allow TCP egress traffic"
     );
 
-    const privateSubnets = this.coreVpc.selectSubnets(
+
+    const privateSubnets : EC2.SelectedSubnets = this.coreVpc.selectSubnets(
       {
         subnetType: EC2.SubnetType.PRIVATE_ISOLATED
       }
     );
 
     // Grant AWS CodeBuild service access to the VPC's private subnets.
-    new EC2.InterfaceVpcEndpoint(
+    const endpoint = new EC2.InterfaceVpcEndpoint(
       this, 'CodeBuildInterfaceVpcEndpoint', {
         service: EC2.InterfaceVpcEndpointAwsService.CODEBUILD,
         vpc: this.coreVpc,
@@ -82,7 +85,7 @@ export class VpcStack extends Stack {
     new EC2.GatewayVpcEndpoint(
       this, 'S3InterfaceVpcEndpoint', {
         service: EC2.GatewayVpcEndpointAwsService.S3,
-        vpc: this.coreVpc,
+        vpc: this.coreVpc
       }
     );
   }
