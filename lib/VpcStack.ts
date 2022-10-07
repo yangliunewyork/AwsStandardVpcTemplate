@@ -45,11 +45,12 @@ export class VpcStack extends Stack {
       {
         securityGroupName: `${vpcName}-VPCEndpointSecurityGroup`,
         vpc: this.coreVpc,
-        description: "Security group for granting AWS services access to the CoreVpc",
+        description:
+          "Security group for controling the traffic that is allowed to reach and leave the CoreVpc",
         allowAllOutbound: false,
       }
     );
-    
+
     vpcEndpointSecurityGroup.addIngressRule(
       EC2.Peer.ipv4(this.coreVpc.vpcCidrBlock),
       EC2.Port.tcp(443),
@@ -63,30 +64,77 @@ export class VpcStack extends Stack {
       "Allow TCP egress traffic"
     );
 
+    const privateSubnets: EC2.SelectedSubnets = this.coreVpc.selectSubnets({
+      subnetType: EC2.SubnetType.PRIVATE_ISOLATED,
+    });
 
-    const privateSubnets : EC2.SelectedSubnets = this.coreVpc.selectSubnets(
-      {
-        subnetType: EC2.SubnetType.PRIVATE_ISOLATED
-      }
-    );
+    new EC2.InterfaceVpcEndpoint(this, "LambdaInterfaceVpcEndpoint", {
+      service: EC2.InterfaceVpcEndpointAwsService.LAMBDA,
+      vpc: this.coreVpc,
+      privateDnsEnabled: true,
+      securityGroups: [vpcEndpointSecurityGroup],
+      subnets: privateSubnets,
+    });
+
+    new EC2.InterfaceVpcEndpoint(this, "SQSInterfaceVpcEndpoint", {
+      service: EC2.InterfaceVpcEndpointAwsService.SQS,
+      vpc: this.coreVpc,
+      privateDnsEnabled: true,
+      securityGroups: [vpcEndpointSecurityGroup],
+      subnets: privateSubnets,
+    });
+
+    new EC2.InterfaceVpcEndpoint(this, "SNSInterfaceVpcEndpoint", {
+      service: EC2.InterfaceVpcEndpointAwsService.SNS,
+      vpc: this.coreVpc,
+      privateDnsEnabled: true,
+      securityGroups: [vpcEndpointSecurityGroup],
+      subnets: privateSubnets,
+    });
+
+    new EC2.InterfaceVpcEndpoint(this, "CodeWatchInterfaceVpcEndpoint", {
+      service: EC2.InterfaceVpcEndpointAwsService.CLOUDWATCH,
+      vpc: this.coreVpc,
+      privateDnsEnabled: true,
+      securityGroups: [vpcEndpointSecurityGroup],
+      subnets: privateSubnets,
+    });
+
+    new EC2.InterfaceVpcEndpoint(this, "CodeWatchLogsInterfaceVpcEndpoint", {
+      service: EC2.InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
+      vpc: this.coreVpc,
+      privateDnsEnabled: true,
+      securityGroups: [vpcEndpointSecurityGroup],
+      subnets: privateSubnets,
+    });
+
+    new EC2.InterfaceVpcEndpoint(this, "CodeWatchEventsInterfaceVpcEndpoint", {
+      service: EC2.InterfaceVpcEndpointAwsService.CLOUDWATCH_EVENTS,
+      vpc: this.coreVpc,
+      privateDnsEnabled: true,
+      securityGroups: [vpcEndpointSecurityGroup],
+      subnets: privateSubnets,
+    });
 
     // Grant AWS CodeBuild service access to the VPC's private subnets.
-    const endpoint = new EC2.InterfaceVpcEndpoint(
-      this, 'CodeBuildInterfaceVpcEndpoint', {
-        service: EC2.InterfaceVpcEndpointAwsService.CODEBUILD,
-        vpc: this.coreVpc,
-        privateDnsEnabled: true,
-        securityGroups: [vpcEndpointSecurityGroup],
-        subnets: privateSubnets
-      }
-    );
+    new EC2.InterfaceVpcEndpoint(this, "CodeBuildInterfaceVpcEndpoint", {
+      service: EC2.InterfaceVpcEndpointAwsService.CODEBUILD,
+      vpc: this.coreVpc,
+      privateDnsEnabled: true,
+      securityGroups: [vpcEndpointSecurityGroup],
+      subnets: privateSubnets,
+    });
 
     // Grant VPC access to S3 service.
-    new EC2.GatewayVpcEndpoint(
-      this, 'S3InterfaceVpcEndpoint', {
-        service: EC2.GatewayVpcEndpointAwsService.S3,
-        vpc: this.coreVpc
-      }
-    );
+    new EC2.GatewayVpcEndpoint(this, "S3InterfaceVpcEndpoint", {
+      service: EC2.GatewayVpcEndpointAwsService.S3,
+      vpc: this.coreVpc,
+    });
+
+    // Grant VPC access to DynamoDB.
+    new EC2.GatewayVpcEndpoint(this, "DynamoDBInterfaceVpcEndpoint", {
+      service: EC2.GatewayVpcEndpointAwsService.DYNAMODB,
+      vpc: this.coreVpc,
+    });
   }
 }
