@@ -126,6 +126,38 @@ export class VpcStack extends Stack {
       subnets: privateSubnets,
     });
 
+    new EC2.InterfaceVpcEndpoint(this, "SecretsManagerInterfaceVpcEndpoint", {
+      service: EC2.InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
+      vpc: this.coreVpc,
+      privateDnsEnabled: true,
+      securityGroups: [vpcEndpointSecurityGroup],
+      subnets: privateSubnets,
+    });
+
+    new EC2.InterfaceVpcEndpoint(this, "KMSInterfaceVpcEndpoint", {
+      service: EC2.InterfaceVpcEndpointAwsService.KMS,
+      vpc: this.coreVpc,
+      privateDnsEnabled: true,
+      securityGroups: [vpcEndpointSecurityGroup],
+      subnets: privateSubnets,
+    });
+
+    new EC2.InterfaceVpcEndpoint(this, "ECRInterfaceVpcEndpoint", {
+      service: EC2.InterfaceVpcEndpointAwsService.ECR,
+      vpc: this.coreVpc,
+      privateDnsEnabled: true,
+      securityGroups: [vpcEndpointSecurityGroup],
+      subnets: privateSubnets,
+    });
+
+    new EC2.InterfaceVpcEndpoint(this, "ECRDockerInterfaceVpcEndpoint", {
+      service: EC2.InterfaceVpcEndpointAwsService.ECR_DOCKER,
+      vpc: this.coreVpc,
+      privateDnsEnabled: true,
+      securityGroups: [vpcEndpointSecurityGroup],
+      subnets: privateSubnets,
+    });
+
     // Grant VPC access to S3 service.
     new EC2.GatewayVpcEndpoint(this, "S3InterfaceVpcEndpoint", {
       service: EC2.GatewayVpcEndpointAwsService.S3,
