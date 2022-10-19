@@ -89,6 +89,8 @@ Spare Availability Zone :
 
 VPC endpoints allow traffic to flow between a VPC and other services without ever leaving the Amazon network.
 
+VPC endpoints are not free, so you will need to have as minimal as possible.
+
 Here is the list of VPC Endpoints we are going to setup for the VPC:
 
 __VPC Interface Endpoints:__  

@@ -1,8 +1,6 @@
 import { Stack, StackProps } from "aws-cdk-lib";
-import { Construct } from "constructs";
 import * as CDK from "aws-cdk-lib";
 import * as EC2 from "aws-cdk-lib/aws-ec2";
-import { Ec2Action } from "aws-cdk-lib/aws-cloudwatch-actions";
 
 export interface VpcStackStackProps extends CDK.StackProps {
   readonly env: CDK.Environment;
@@ -11,6 +9,7 @@ export interface VpcStackStackProps extends CDK.StackProps {
 
 export class VpcStack extends Stack {
   private readonly coreVpc: EC2.Vpc;
+  private readonly vpcEndpointSecurityGroup: EC2.SecurityGroup;
   constructor(scope: CDK.App, id: string, props?: VpcStackStackProps) {
     super(scope, id, props);
 
@@ -39,7 +38,7 @@ export class VpcStack extends Stack {
     });
 
     // Create security group for the VPC
-    const vpcEndpointSecurityGroup = new EC2.SecurityGroup(
+    this.vpcEndpointSecurityGroup = new EC2.SecurityGroup(
       this,
       `${vpcName}-VPCEndpointSecurityGroup`,
       {
@@ -51,7 +50,7 @@ export class VpcStack extends Stack {
       }
     );
 
-    vpcEndpointSecurityGroup.addIngressRule(
+    this.vpcEndpointSecurityGroup.addIngressRule(
       EC2.Peer.ipv4(this.coreVpc.vpcCidrBlock),
       EC2.Port.tcp(443),
       //EC2.Port.allTraffic(),
@@ -66,6 +65,12 @@ export class VpcStack extends Stack {
     );
     */
 
+    this.createVpcEndpoint();
+
+  }
+
+  // VPC endpoints are not free, so you will need to have as minimal as possible.
+  private createVpcEndpoint() {
     const privateSubnets: EC2.SelectedSubnets = this.coreVpc.selectSubnets({
       subnetType: EC2.SubnetType.PRIVATE_ISOLATED,
     });
@@ -74,7 +79,7 @@ export class VpcStack extends Stack {
       service: EC2.InterfaceVpcEndpointAwsService.LAMBDA,
       vpc: this.coreVpc,
       privateDnsEnabled: true,
-      securityGroups: [vpcEndpointSecurityGroup],
+      securityGroups: [this.vpcEndpointSecurityGroup],
       subnets: privateSubnets,
     });
 
@@ -82,7 +87,7 @@ export class VpcStack extends Stack {
       service: EC2.InterfaceVpcEndpointAwsService.SQS,
       vpc: this.coreVpc,
       privateDnsEnabled: true,
-      securityGroups: [vpcEndpointSecurityGroup],
+      securityGroups: [this.vpcEndpointSecurityGroup],
       subnets: privateSubnets,
     });
 
@@ -90,15 +95,15 @@ export class VpcStack extends Stack {
       service: EC2.InterfaceVpcEndpointAwsService.SNS,
       vpc: this.coreVpc,
       privateDnsEnabled: true,
-      securityGroups: [vpcEndpointSecurityGroup],
+      securityGroups: [this.vpcEndpointSecurityGroup],
       subnets: privateSubnets,
     });
 
-    new EC2.InterfaceVpcEndpoint(this, "CodeWatchInterfaceVpcEndpoint", {
+    new EC2.InterfaceVpcEndpoint(this, "CloudWatchInterfaceVpcEndpoint", {
       service: EC2.InterfaceVpcEndpointAwsService.CLOUDWATCH,
       vpc: this.coreVpc,
       privateDnsEnabled: true,
-      securityGroups: [vpcEndpointSecurityGroup],
+      securityGroups: [this.vpcEndpointSecurityGroup],
       subnets: privateSubnets,
     });
 
@@ -106,7 +111,7 @@ export class VpcStack extends Stack {
       service: EC2.InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
       vpc: this.coreVpc,
       privateDnsEnabled: true,
-      securityGroups: [vpcEndpointSecurityGroup],
+      securityGroups: [this.vpcEndpointSecurityGroup],
       subnets: privateSubnets,
     });
 
@@ -114,7 +119,7 @@ export class VpcStack extends Stack {
       service: EC2.InterfaceVpcEndpointAwsService.CLOUDWATCH_EVENTS,
       vpc: this.coreVpc,
       privateDnsEnabled: true,
-      securityGroups: [vpcEndpointSecurityGroup],
+      securityGroups: [this.vpcEndpointSecurityGroup],
       subnets: privateSubnets,
     });
 
@@ -122,7 +127,7 @@ export class VpcStack extends Stack {
       service: EC2.InterfaceVpcEndpointAwsService.CODEBUILD,
       vpc: this.coreVpc,
       privateDnsEnabled: true,
-      securityGroups: [vpcEndpointSecurityGroup],
+      securityGroups: [this.vpcEndpointSecurityGroup],
       subnets: privateSubnets,
     });
 
@@ -130,7 +135,7 @@ export class VpcStack extends Stack {
       service: EC2.InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
       vpc: this.coreVpc,
       privateDnsEnabled: true,
-      securityGroups: [vpcEndpointSecurityGroup],
+      securityGroups: [this.vpcEndpointSecurityGroup],
       subnets: privateSubnets,
     });
 
@@ -138,7 +143,7 @@ export class VpcStack extends Stack {
       service: EC2.InterfaceVpcEndpointAwsService.KMS,
       vpc: this.coreVpc,
       privateDnsEnabled: true,
-      securityGroups: [vpcEndpointSecurityGroup],
+      securityGroups: [this.vpcEndpointSecurityGroup],
       subnets: privateSubnets,
     });
 
@@ -146,7 +151,7 @@ export class VpcStack extends Stack {
       service: EC2.InterfaceVpcEndpointAwsService.ECR,
       vpc: this.coreVpc,
       privateDnsEnabled: true,
-      securityGroups: [vpcEndpointSecurityGroup],
+      securityGroups: [this.vpcEndpointSecurityGroup],
       subnets: privateSubnets,
     });
 
@@ -154,7 +159,7 @@ export class VpcStack extends Stack {
       service: EC2.InterfaceVpcEndpointAwsService.ECR_DOCKER,
       vpc: this.coreVpc,
       privateDnsEnabled: true,
-      securityGroups: [vpcEndpointSecurityGroup],
+      securityGroups: [this.vpcEndpointSecurityGroup],
       subnets: privateSubnets,
     });
 
